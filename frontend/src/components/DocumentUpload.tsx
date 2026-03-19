@@ -102,7 +102,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#111118',
     borderRadius: 16,
     border: '1px solid rgba(255,255,255,0.06)',
-    overflow: 'hidden',
   },
 
   // Header

@@ -171,14 +171,11 @@ async def analyze_image(image_path: str, doc_type: str = "generic") -> dict:
     """
     image_b64 = _encode_image(image_path)
 
-    # Otomatik tespit: kullanıcı "generic" seçtiyse veya "auto" geldiyse
-    if doc_type not in PROMPTS or doc_type == "generic":
+    # Otomatik tespit: sadece "auto" geldiyse veya geçersiz tip ise
+    if doc_type not in PROMPTS:
         detected = await _detect_doc_type(image_b64)
-        if detected != "generic":
-            logger.info(f"Belge tipi otomatik tespit edildi: {detected} (kullanıcı seçimi: {doc_type})")
-            doc_type = detected
-        elif doc_type not in PROMPTS:
-            doc_type = "generic"
+        logger.info(f"Belge tipi otomatik tespit edildi: {detected}")
+        doc_type = detected
 
     logger.info(f"VLM analizi başlıyor: {image_path} (tip: {doc_type})")
 
