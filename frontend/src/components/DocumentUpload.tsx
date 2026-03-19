@@ -410,7 +410,7 @@ export default function DocumentUpload({ onUploadSuccess, triggerOpen }: Props) 
             setFile(null);
             toast.success('Belge analiz tamamlandı');
           }
-        } else if (attempts > 90) {
+        } else if (attempts > 150) {
           clearInterval(pollingRef.current!);
           if (timerRef.current) clearInterval(timerRef.current);
           setStatus({ type: 'error', message: 'İşlem zaman aşımına uğradı.' });

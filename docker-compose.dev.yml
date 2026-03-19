@@ -1,0 +1,22 @@
+# Development compose — use this when MySQL and Ollama are already running locally.
+# Only starts ChromaDB.
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d
+#   uvicorn app.main:app --host 0.0.0.0 --port 8100 --reload
+#   cd frontend && npm run dev
+
+version: "3.9"
+
+services:
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: visualmind_chromadb
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    restart: unless-stopped
+
+volumes:
+  chroma_data:

@@ -145,10 +145,10 @@ async def _detect_doc_type(image_b64: str) -> str:
         "prompt": DETECT_PROMPT,
         "images": [image_b64],
         "stream": False,
-        "keep_alive": 0,
+        "keep_alive": 300,
         "options": {"temperature": 0.0, "num_predict": 10},
     }
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=180.0) as client:
         response = await client.post(
             f"{settings.OLLAMA_BASE_URL}/api/generate",
             json=payload,
@@ -192,11 +192,11 @@ async def analyze_image(image_path: str, doc_type: str = "generic") -> dict:
         "prompt": prompt,
         "images": [image_b64],
         "stream": False,
-        "keep_alive": 0,  # RAM'i hemen serbest bırak
+        "keep_alive": 300,
         "options": {"temperature": 0.1, "num_predict": 2048},
     }
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    async with httpx.AsyncClient(timeout=300.0) as client:
         response = await client.post(
             f"{settings.OLLAMA_BASE_URL}/api/generate",
             json=payload,
