@@ -35,6 +35,8 @@ Alan adları: magaza_adi, tarih, saat, fis_no,
 kalemler (her kalem için: urun_adi, miktar, birim(KG/ADET/LT), birim_fiyat, kdv_orani, toplam),
 ara_toplam, toplam_kdv, genel_toplam, odeme_yontemi.
 
+İPUCU: Fişteki "KDV" sütun başlığının altındaki değerler kdv_orani, "TOPLAM" sütun başlığının altındaki değerler ise kalemin toplam tutarıdır.
+
 KRİTİK DOĞRULAMA: Her kalem için miktar × birim_fiyat = toplam olmalı.
 Eğer tutmuyorsa birim_fiyat yanlış okunmuş demektir — toplam ÷ miktar ile birim_fiyat'ı hesapla ve düzelt.
 Örnek: miktar=2.25, toplam=13.50 → birim_fiyat = 13.50 ÷ 2.25 = 6.00

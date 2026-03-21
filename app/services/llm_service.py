@@ -164,6 +164,71 @@ def _check_ambiguous(question: str, items: list) -> Optional[str]:
     return None
 
 
+_KDV_KEYWORDS = ['kdv', 'vergi', 'tax']
+
+
+def _compute_kdv(question: str, extracted_data: dict) -> Optional[str]:
+    """
+    KDV sorularını Python'da hesaplar, LLM'e göndermeden hazır Türkçe cevap döner.
+    Fişlerde fiyatlar KDV dahildir: KDV_tutarı = toplam × oran / (100 + oran)
+    """
+    q = question.lower()
+    if not any(kw in q for kw in _KDV_KEYWORDS):
+        return None
+
+    items = _get_items_list(extracted_data)
+    toplam_kdv_belgede = extracted_data.get('toplam_kdv') or extracted_data.get('kdv_tutari')
+
+    if not items and toplam_kdv_belgede is None:
+        return None
+
+    item_lines = []
+    hesaplanan_toplam = 0.0
+
+    for item in items:
+        try:
+            toplam = float(item.get('toplam') or 0)
+            oran = float(item.get('kdv_orani') or 0)
+            ad = item.get('urun_adi') or item.get('aciklama') or '?'
+            if oran and toplam:
+                kdv_tutari = round(toplam * oran / (100 + oran), 2)
+                hesaplanan_toplam = round(hesaplanan_toplam + kdv_tutari, 2)
+                oran_str = str(int(oran)) if oran == int(oran) else str(oran)
+                item_lines.append(
+                    f"- {ad}: {toplam} TL (KDV dahil) × %{oran_str} / (100+{oran_str}) = {kdv_tutari} TL"
+                )
+        except (TypeError, ValueError):
+            continue
+
+    lines = []
+
+    if item_lines:
+        lines.append("Kalem bazında KDV (formül: toplam × oran / (100 + oran)):")
+        lines.extend(item_lines)
+        lines.append(f"Hesaplanan toplam KDV: {hesaplanan_toplam} TL")
+
+    if toplam_kdv_belgede is not None:
+        try:
+            belgede = round(float(toplam_kdv_belgede), 2)
+            lines.append(f"Belgede yazan toplam KDV: {belgede} TL")
+
+            if item_lines:
+                fark = round(abs(hesaplanan_toplam - belgede), 2)
+                if fark <= 0.02:
+                    lines.append("Sonuç: KDV hesaplamaları belgeyle uyuşuyor, doğru.")
+                else:
+                    lines.append(
+                        f"Not: Kalem bazında hesaplanan KDV ({hesaplanan_toplam} TL) "
+                        f"ile belgede yazan ({belgede} TL) uyuşmuyor. "
+                        f"Büyük ihtimalle KDV oranı görselden yanlış okunmuş. "
+                        f"Belgede yazan {belgede} TL esas değerdir."
+                    )
+        except (TypeError, ValueError):
+            pass
+
+    return '\n'.join(lines) if lines else None
+
+
 def _compute_numerical(question: str, extracted_data: dict) -> Optional[str]:
     """
     Max/min hesaplamasını Python'da yapar.
@@ -262,19 +327,27 @@ class ConversationSession:
             self.history.append({"role": "assistant", "content": OFFTOPIC_REPLY})
             return OFFTOPIC_REPLY
 
-        # 2. Sayısal hesaplama / belirsizlik
-        numerical_result = _compute_numerical(question, self.extracted_data)
-        if numerical_result:
-            if numerical_result.startswith("__CLARIFICATION__:"):
-                clarification = numerical_result[len("__CLARIFICATION__:"):]
-                logger.info(f"Belirsiz soru, netleştirme istendi (doc_id={self.document_id})")
-                self.history.append({"role": "user", "content": question})
-                self.history.append({"role": "assistant", "content": clarification})
-                return clarification
-            effective_question = numerical_result
-            logger.info(f"Sayısal hesaplama Python'da yapıldı, alan: field (doc_id={self.document_id})")
+        # 2. KDV hesaplama (Python — LLM'e gönderilmez, direkt döner)
+        kdv_result = _compute_kdv(question, self.extracted_data)
+        if kdv_result:
+            logger.info(f"KDV hesaplama Python'da yapıldı, LLM bypass (doc_id={self.document_id})")
+            self.history.append({"role": "user", "content": question})
+            self.history.append({"role": "assistant", "content": kdv_result})
+            return kdv_result
         else:
-            effective_question = question
+            # 3. Max/min sayısal hesaplama (Python)
+            numerical_result = _compute_numerical(question, self.extracted_data)
+            if numerical_result:
+                if numerical_result.startswith("__CLARIFICATION__:"):
+                    clarification = numerical_result[len("__CLARIFICATION__:"):]
+                    logger.info(f"Belirsiz soru, netleştirme istendi (doc_id={self.document_id})")
+                    self.history.append({"role": "user", "content": question})
+                    self.history.append({"role": "assistant", "content": clarification})
+                    return clarification
+                effective_question = numerical_result
+                logger.info(f"Sayısal hesaplama Python'da yapıldı (doc_id={self.document_id})")
+            else:
+                effective_question = question
 
         # 3. LLM çağrısı
         messages = self._build_messages(effective_question)

@@ -24,7 +24,7 @@ api.interceptors.response.use(
 
 // --- Tipler ---
 
-export type DocType = 'invoice' | 'receipt' | 'technical' | 'generic';
+export type DocType = 'invoice' | 'receipt' | 'technical' | 'generic' | 'auto';
 
 export interface Document {
   id: string;

@@ -14,6 +14,15 @@ interface Props {
 
 const DOC_TYPE_OPTIONS: { value: DocType; label: string; icon: React.ReactNode }[] = [
   {
+    value: 'auto',
+    label: 'Otomatik',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0zm7-3.25a.75.75 0 00-1.5 0v3.5l2.25 2.25a.75.75 0 001.06-1.06L8.5 7.69V4.75z" />
+      </svg>
+    ),
+  },
+  {
     value: 'invoice',
     label: 'Fatura',
     icon: (
@@ -334,7 +343,7 @@ function formatBytes(bytes: number): string {
 
 export default function DocumentUpload({ onUploadSuccess, triggerOpen }: Props) {
   const [file, setFile] = useState<File | null>(null);
-  const [docType, setDocType] = useState<DocType>('generic');
+  const [docType, setDocType] = useState<DocType>('auto');
   const [isDragging, setIsDragging] = useState(false);
   const [status, setStatus] = useState<Status>({ type: 'idle' });
   const [elapsedSecs, setElapsedSecs] = useState(0);
