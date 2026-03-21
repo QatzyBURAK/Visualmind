@@ -40,7 +40,7 @@ services:
     build: .
     container_name: visualmind_backend
     ports:
-      - "8000:8000"
+      - "8100:8100"
     env_file:
       - .env
     environment:
